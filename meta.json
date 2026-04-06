@@ -1,0 +1,25 @@
+{
+  "$schema": "https://dl.viam.dev/module.schema.json",
+  "module_id": "viam:pointcloud-calibration",
+  "visibility": "public",
+  "description": "calibrate depth camera frames on robot arms using pointcloud alignment",
+  "models": [
+    {
+      "api": "rdk:service:generic",
+      "model": "viam:pointcloud-calibration:depth-camera-on-arm",
+      "short_description": "calibrate a depth camera mounted on an arm using pointcloud ICP alignment"
+    }
+  ],
+  "entrypoint": "bin/pointcloud-calibration",
+  "build": {
+    "build": "make module.tar.gz",
+    "setup": "make setup",
+    "path": "module.tar.gz",
+    "arch": [
+      "linux/amd64",
+      "linux/arm64",
+      "darwin/arm64"
+    ],
+    "darwin_deps": ["nlopt-static", "go"]
+  }
+}

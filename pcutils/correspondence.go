@@ -82,11 +82,14 @@ func LeaveOneOutLoss(worldClouds [][]r3.Vector, overlapThreshold float64, stats 
 			}
 
 			var localDist2 float64
-			var localCount int
+			localCount := len(worldClouds[i])
+			penaltyDist2 := overlapThreshold * overlapThreshold
 			nnStart := time.Now()
 			for _, p := range worldClouds[i] {
 				neighbors, err := octree.PointsWithinRadius(p, overlapThreshold)
 				if err != nil || len(neighbors) == 0 {
+					// No neighbor within threshold — penalize with max distance
+					localDist2 += penaltyDist2
 					continue
 				}
 				minDist2 := math.MaxFloat64
@@ -97,7 +100,6 @@ func LeaveOneOutLoss(worldClouds [][]r3.Vector, overlapThreshold float64, stats 
 					}
 				}
 				localDist2 += minDist2
-				localCount++
 			}
 			if stats != nil {
 				stats.NNQueryNanos.Add(time.Since(nnStart).Nanoseconds())

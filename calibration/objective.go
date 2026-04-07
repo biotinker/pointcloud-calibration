@@ -2,6 +2,7 @@ package calibration
 
 import (
 	"context"
+	"sync"
 	"time"
 
 	"github.com/golang/geo/r3"
@@ -60,11 +61,16 @@ func SingleArmObjective(snapshots []Snapshot, overlapThreshold float64, stats *S
 
 		transformStart := time.Now()
 		worldClouds := make([][]r3.Vector, len(snapshots))
+		var wg sync.WaitGroup
+		wg.Add(len(snapshots))
 		for i, snap := range snapshots {
-			// world_cloud_i = arm_pose_i * candidate_cam_to_ee * local_points
-			worldTransform := spatialmath.Compose(snap.ArmPose, candidateTransform)
-			worldClouds[i] = pcutils.ApplyPose(snap.LocalPoints, worldTransform)
+			go func(i int, snap Snapshot) {
+				defer wg.Done()
+				worldTransform := spatialmath.Compose(snap.ArmPose, candidateTransform)
+				worldClouds[i] = pcutils.ApplyPose(snap.LocalPoints, worldTransform)
+			}(i, snap)
 		}
+		wg.Wait()
 		if stats != nil {
 			stats.TransformNanos.Add(time.Since(transformStart).Nanoseconds())
 		}
@@ -109,16 +115,21 @@ func MultiArmObjective(
 		arm1ToArm2 := floatsToPose(params)
 
 		transformStart := time.Now()
-		allClouds := make([][]r3.Vector, 0, len(arm1Snapshots)+len(arm2Snapshots))
-		allClouds = append(allClouds, arm1WorldClouds...)
-		for _, snap := range arm2Snapshots {
-			// arm1_frame_point = arm1_to_arm2 * arm2_pose * cam_to_ee2 * local_point
-			arm2WorldTransform := spatialmath.Compose(
-				arm1ToArm2,
-				spatialmath.Compose(snap.ArmPose, camToEE2),
-			)
-			allClouds = append(allClouds, pcutils.ApplyPose(snap.LocalPoints, arm2WorldTransform))
+		allClouds := make([][]r3.Vector, len(arm1Snapshots)+len(arm2Snapshots))
+		copy(allClouds, arm1WorldClouds)
+		var wg sync.WaitGroup
+		wg.Add(len(arm2Snapshots))
+		for j, snap := range arm2Snapshots {
+			go func(idx int, snap Snapshot) {
+				defer wg.Done()
+				arm2WorldTransform := spatialmath.Compose(
+					arm1ToArm2,
+					spatialmath.Compose(snap.ArmPose, camToEE2),
+				)
+				allClouds[idx] = pcutils.ApplyPose(snap.LocalPoints, arm2WorldTransform)
+			}(len(arm1Snapshots)+j, snap)
 		}
+		wg.Wait()
 		if stats != nil {
 			stats.TransformNanos.Add(time.Since(transformStart).Nanoseconds())
 		}

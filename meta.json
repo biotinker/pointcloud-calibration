@@ -2,6 +2,7 @@
   "$schema": "https://dl.viam.dev/module.schema.json",
   "module_id": "biotinker:pointcloud-calibration",
   "visibility": "public",
+  "url": "https://github.com/biotinker/pointcloud-calibration",
   "description": "calibrate depth camera frames on robot arms using pointcloud alignment",
   "models": [
     {

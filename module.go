@@ -238,6 +238,17 @@ func (s *PointcloudCalibrationService) DoCommand(ctx context.Context, cmd map[st
 				return nil, err
 			}
 
+			dataDir, err := calibration.SaveDataset(
+				snapshots,
+				s.cfg.voxelSize(), s.cfg.fovCropRatio(), s.cfg.overlapThreshold(),
+				s.logger,
+			)
+			if err != nil {
+				s.logger.Warnf("failed to save dataset: %v", err)
+			} else {
+				s.logger.Infof("dataset saved to %s — rerun offline with: go test -run TestOffline -dataset %s", dataDir, dataDir)
+			}
+
 			var bestResult *calibration.Result
 			for i := range numAttempts {
 				result, err := calibration.CalibrateTransform(

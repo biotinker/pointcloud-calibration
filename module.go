@@ -22,7 +22,7 @@ import (
 )
 
 var (
-	Model        = resource.NewModel("viam", "pointcloud-calibration", "depth-camera-on-arm")
+	Model        = resource.NewModel("biotinker", "pointcloud-calibration", "depth-camera-on-arm")
 	errNoDo      = errors.New("no valid DoCommand submitted")
 	errNoArm     = errors.New("arm name not found in configured arms")
 	errNoPoses   = errors.New("no joint positions configured for this arm")

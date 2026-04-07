@@ -4,7 +4,7 @@ Calibrate the frame of a depth camera mounted on a robot arm using pointcloud al
 
 Unlike the [frame-calibration](https://app.viam.com/module/viam/frame-calibration) module, which requires AprilTags, this module works directly with RGB-D pointclouds from the depth camera itself. No fiducial markers are needed.
 
-## Model viam:pointcloud-calibration:depth-camera-on-arm
+## Model biotinker:pointcloud-calibration:depth-camera-on-arm
 
 ### How it works
 

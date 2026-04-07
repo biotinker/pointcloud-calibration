@@ -4,11 +4,13 @@
   "visibility": "public",
   "url": "https://github.com/biotinker/pointcloud-calibration",
   "description": "calibrate depth camera frames on robot arms using pointcloud alignment",
+  "markdown_link": "README.md",
   "models": [
     {
       "api": "rdk:service:generic",
       "model": "biotinker:pointcloud-calibration:depth-camera-on-arm",
-      "short_description": "calibrate a depth camera mounted on an arm using pointcloud ICP alignment"
+      "short_description": "calibrate a depth camera mounted on an arm using pointcloud ICP alignment",
+      "markdown_link": "README.md#configuration"
     }
   ],
   "entrypoint": "bin/pointcloud-calibration",

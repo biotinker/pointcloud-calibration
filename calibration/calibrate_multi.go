@@ -3,6 +3,7 @@ package calibration
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/referenceframe"
@@ -53,11 +54,13 @@ func CalibrateMultiArm(
 
 		logger.Infof("calibrating %s -> %s base transform", refArm, otherArm)
 
-		costFunc := MultiArmObjective(refSnapshots, otherSnapshots, refCamToEE, otherCamToEE, overlapThreshold)
+		stats := &Stats{}
+		costFunc := MultiArmObjective(refSnapshots, otherSnapshots, refCamToEE, otherCamToEE, overlapThreshold, stats)
 
 		var bestResult *Result
 		seedPose := spatialmath.NewZeroPose()
 
+		wallStart := time.Now()
 		for i := range numAttempts {
 			solutions, err := Optimize(ctx, limits, seedPose, costFunc, maxIterations, logger)
 			if err != nil {
@@ -69,6 +72,7 @@ func CalibrateMultiArm(
 			}
 			seedPose = best.Pose
 		}
+		stats.LogSummary(logger, time.Since(wallStart))
 
 		key := fmt.Sprintf("%s->%s", refArm, otherArm)
 		result.BaseTransforms[key] = MakeFrameCfg(refArm, bestResult.Pose)

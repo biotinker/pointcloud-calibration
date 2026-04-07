@@ -71,7 +71,7 @@ func TestSingleArmObjective(t *testing.T) {
 	}
 
 	overlapThreshold := 200.0
-	costFunc := SingleArmObjective(snapshots, overlapThreshold)
+	costFunc := SingleArmObjective(snapshots, overlapThreshold, nil)
 
 	// The cost at the correct transform should be very low (near zero)
 	correctParams := poseToFloats(knownTransform)
@@ -102,7 +102,7 @@ func TestLeaveOneOutLoss(t *testing.T) {
 		{X: 10, Y: 0, Z: 0},
 		{X: 0, Y: 10, Z: 0},
 	}
-	loss := pcutils.LeaveOneOutLoss([][]r3.Vector{cloud, cloud}, 100.0)
+	loss := pcutils.LeaveOneOutLoss([][]r3.Vector{cloud, cloud}, 100.0, nil)
 	if loss > 0.01 {
 		t.Errorf("expected near-zero loss for identical clouds, got %f", loss)
 	}
@@ -113,7 +113,7 @@ func TestLeaveOneOutLoss(t *testing.T) {
 		{X: 15, Y: 0, Z: 0},
 		{X: 5, Y: 10, Z: 0},
 	}
-	loss2 := pcutils.LeaveOneOutLoss([][]r3.Vector{cloud, offset}, 100.0)
+	loss2 := pcutils.LeaveOneOutLoss([][]r3.Vector{cloud, offset}, 100.0, nil)
 	if loss2 <= 0.01 {
 		t.Errorf("expected non-zero loss for offset clouds, got %f", loss2)
 	}

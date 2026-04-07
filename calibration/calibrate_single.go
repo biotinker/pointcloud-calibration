@@ -3,6 +3,7 @@ package calibration
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"go.viam.com/rdk/logging"
 	"go.viam.com/rdk/referenceframe"
@@ -30,9 +31,13 @@ func CalibrateTransform(
 	}
 	logger.Infof("single-arm calibration: %d snapshots, %d total points", len(snapshots), totalPoints)
 
-	costFunc := SingleArmObjective(snapshots, overlapThreshold)
+	stats := &Stats{}
+	costFunc := SingleArmObjective(snapshots, overlapThreshold, stats)
 
+	wallStart := time.Now()
 	solutions, err := Optimize(ctx, limits, seedPose, costFunc, maxIterations, logger)
+	wall := time.Since(wallStart)
+	stats.LogSummary(logger, wall)
 	if err != nil {
 		return nil, fmt.Errorf("optimization failed: %w", err)
 	}

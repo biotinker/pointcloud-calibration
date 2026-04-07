@@ -2,11 +2,22 @@ package pcutils
 
 import (
 	"math"
+	"sync/atomic"
+	"time"
 
 	"github.com/golang/geo/r3"
 
 	"go.viam.com/rdk/pointcloud"
 )
+
+// LossStats is an optional timing/counting collector passed into LeaveOneOutLoss.
+// Fields are atomic so callers can share one across concurrent optimizer workers.
+type LossStats struct {
+	OctreeBuildNanos *atomic.Int64
+	OctreeBuilds     *atomic.Int64
+	NNQueryNanos     *atomic.Int64
+	NNQueries        *atomic.Int64
+}
 
 // VectorsToOctree builds an octree from a set of vectors for efficient spatial queries.
 func VectorsToOctree(points []r3.Vector) (*pointcloud.BasicOctree, error) {
@@ -22,7 +33,8 @@ func VectorsToOctree(points []r3.Vector) (*pointcloud.BasicOctree, error) {
 // LeaveOneOutLoss computes the leave-one-out RMS alignment cost.
 // For each cloud, it measures NN distances against the union of all other clouds.
 // Points with NN distance > overlapThreshold are excluded from the loss.
-func LeaveOneOutLoss(worldClouds [][]r3.Vector, overlapThreshold float64) float64 {
+// If stats is non-nil, timing information is accumulated into it.
+func LeaveOneOutLoss(worldClouds [][]r3.Vector, overlapThreshold float64, stats *LossStats) float64 {
 	n := len(worldClouds)
 	if n < 2 {
 		return math.MaxFloat64
@@ -46,11 +58,17 @@ func LeaveOneOutLoss(worldClouds [][]r3.Vector, overlapThreshold float64) float6
 			}
 		}
 
+		octreeStart := time.Now()
 		octree, err := VectorsToOctree(reference)
+		if stats != nil {
+			stats.OctreeBuildNanos.Add(time.Since(octreeStart).Nanoseconds())
+			stats.OctreeBuilds.Add(1)
+		}
 		if err != nil {
 			return math.MaxFloat64
 		}
 
+		nnStart := time.Now()
 		for _, p := range worldClouds[i] {
 			neighbors, err := octree.PointsWithinRadius(p, overlapThreshold)
 			if err != nil || len(neighbors) == 0 {
@@ -65,6 +83,10 @@ func LeaveOneOutLoss(worldClouds [][]r3.Vector, overlapThreshold float64) float6
 			}
 			totalDist2 += minDist2
 			totalCount++
+		}
+		if stats != nil {
+			stats.NNQueryNanos.Add(time.Since(nnStart).Nanoseconds())
+			stats.NNQueries.Add(int64(len(worldClouds[i])))
 		}
 	}
 
